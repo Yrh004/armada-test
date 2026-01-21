@@ -12,6 +12,26 @@ import { formatDuration, formatTimestampRelative, TimestampFormat } from "./form
 import { formatJobState } from "./jobsTableFormatters"
 import { formatBytes, formatCpu, parseBytes, parseCpu, parseInteger } from "./resourceUtils"
 
+// Adding things for the copy button on Jobs ID column
+import ContentCopyIcon from "@mui/icons-material/ContentCopy"
+import { IconButton, Tooltip, Stack } from "@mui/material"
+
+const copyColumnValues = async <T,>(
+  table: import("@tanstack/react-table").Table<T>,
+  columnId: string,
+) => {
+  // Prefer selected rows if any are selected
+  const rows = table.getSelectedRowModel().rows.length > 0
+    ? table.getSelectedRowModel().rows
+    : table.getRowModel().rows
+
+  const values = rows
+    .map((row) => row.getValue<string>(columnId))
+    .filter(Boolean)
+
+  await navigator.clipboard.writeText(values.join("\n"))
+}
+
 export type JobTableColumn = ColumnDef<JobTableRow, any>
 
 export enum FilterType {
@@ -279,20 +299,38 @@ export const GET_JOB_COLUMNS = ({
     },
   }),
   accessorColumn({
-    id: StandardColumnId.JobID,
-    accessor: "jobId",
-    displayName: STANDARD_COLUMN_DISPLAY_NAMES[StandardColumnId.JobID],
-    additionalOptions: {
-      enableColumnFilter: true,
-      enableSorting: true,
-      size: 300,
-    },
-    additionalMetadata: {
-      filterType: FilterType.Text,
-      defaultMatchType: Match.Exact, // Job ID does not support startsWith
-      allowCopy: true,
-    },
-  }),
+  id: StandardColumnId.JobID,
+  accessor: "jobId",
+  displayName: STANDARD_COLUMN_DISPLAY_NAMES[StandardColumnId.JobID],
+  additionalOptions: {
+    enableColumnFilter: true,
+    enableSorting: true,
+    size: 300,
+
+    header: ({ table }) => (
+      <Stack direction="row" alignItems="center" spacing={0.5}>
+        <span>Job ID</span>
+
+        <Tooltip title="Copy job IDs (selected or visible)">
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation()
+              copyColumnValues(table, StandardColumnId.JobID)
+            }}
+          >
+            <ContentCopyIcon fontSize="inherit" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    ),
+  },
+  additionalMetadata: {
+    filterType: FilterType.Text,
+    defaultMatchType: Match.Exact,
+    allowCopy: true,
+  },
+}),
   accessorColumn({
     id: StandardColumnId.State,
     accessor: "state",
