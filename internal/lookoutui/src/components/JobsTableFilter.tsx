@@ -9,6 +9,7 @@ import {
   InputLabel,
   ListItemIcon,
   ListItemText,
+  ListSubheader,
   MenuItem,
   OutlinedInput,
   Select,
@@ -141,12 +142,20 @@ export const JobsTableFilter = ({
   return <Box sx={{ display: "block", width: "100%" }}>{filter}</Box>
 }
 
-export interface EnumFilterOption {
+export interface EnumFilterOptionBase {
   value: string
   displayName: string
   Icon?: ElementType<SvgIconProps>
   iconColor?: CustomPaletteColorToken
 }
+
+export interface EnumFilterOptionGroup {
+  groupLabel: string
+  options: EnumFilterOptionBase[]
+}
+
+export type EnumFilterOption = EnumFilterOptionBase | EnumFilterOptionGroup
+
 interface EnumFilterProps {
   currentFilter: string[]
   enumFilterValues: EnumFilterOption[]
@@ -154,6 +163,11 @@ interface EnumFilterProps {
   onFilterChange: JobsTableFilterProps["onFilterChange"]
 }
 const EnumFilter = ({ currentFilter, enumFilterValues, label, onFilterChange }: EnumFilterProps) => {
+  // Flatten grouped options for finding values
+  const flattenedOptions = enumFilterValues.flatMap((item) =>
+    "groupLabel" in item ? item.options : [item],
+  )
+
   return (
     <Select
       variant="standard"
@@ -171,7 +185,7 @@ const EnumFilter = ({ currentFilter, enumFilterValues, label, onFilterChange }: 
       displayEmpty={true}
       renderValue={(selected) =>
         selected.length > 0 ? (
-          selected.map((s) => enumFilterValues.find((v) => v.value === s)?.displayName ?? s).join(", ")
+          selected.map((s) => flattenedOptions.find((v) => v.value === s)?.displayName ?? s).join(", ")
         ) : (
           // Approximately matches the styling for a text input's placeholder
           <InputLabel>{label}</InputLabel>
@@ -190,17 +204,74 @@ const EnumFilter = ({ currentFilter, enumFilterValues, label, onFilterChange }: 
         },
       }}
     >
-      {(enumFilterValues ?? []).map(({ value, displayName, Icon, iconColor }) => (
-        <MenuItem key={value} value={value} dense>
-          <Checkbox checked={currentFilter.indexOf(value) > -1} size="small" sx={{ padding: "3px" }} />
-          <ListItemText primary={displayName} />
-          {Icon && (
-            <ListItemIcon>
-              <Icon fontSize="inherit" color={iconColor ?? "inherit"} />
-            </ListItemIcon>
-          )}
-        </MenuItem>
-      ))}
+      {(enumFilterValues ?? []).map((item, idx) => {
+        if ("groupLabel" in item) {
+          const groupValues = item.options.map((opt) => opt.value)
+          const allGroupSelected = groupValues.every((v) => currentFilter.includes(v))
+
+          return [
+            <ListSubheader
+              key={`group-${idx}`}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (allGroupSelected) {
+                  // Deselect all in this group
+                  const newFilter = currentFilter.filter((v) => !groupValues.includes(v))
+                  onFilterChange(newFilter.length === 0 ? undefined : newFilter)
+                } else {
+                  // Select all in this group (merge with existing selections)
+                  const newFilter = [...new Set([...currentFilter, ...groupValues])]
+                  onFilterChange(newFilter)
+                }
+              }}
+              sx={{
+                cursor: "pointer",
+                userSelect: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                pointerEvents: "auto",
+                fontSize: "1.05rem",
+                fontWeight: 500,
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+              }}
+            >
+              <Checkbox
+                checked={allGroupSelected}
+                size="small"
+                sx={{ padding: "3px", pointerEvents: "none" }}
+              />
+              {item.groupLabel}
+            </ListSubheader>,
+            ...item.options.map(({ value, displayName, Icon, iconColor }) => (
+              <MenuItem key={value} value={value} dense sx={{ paddingLeft: "32px" }}>
+                <Checkbox checked={currentFilter.indexOf(value) > -1} size="small" sx={{ padding: "3px" }} />
+                <ListItemText primary={displayName} />
+                {Icon && (
+                  <ListItemIcon>
+                    <Icon fontSize="inherit" color={iconColor ?? "inherit"} />
+                  </ListItemIcon>
+                )}
+              </MenuItem>
+            )),
+          ]
+        } else {
+          return (
+            <MenuItem key={item.value} value={item.value} dense>
+              <Checkbox checked={currentFilter.indexOf(item.value) > -1} size="small" sx={{ padding: "3px" }} />
+              <ListItemText primary={item.displayName} />
+              {item.Icon && (
+                <ListItemIcon>
+                  <item.Icon fontSize="inherit" color={item.iconColor ?? "inherit"} />
+                </ListItemIcon>
+              )}
+            </MenuItem>
+          )
+        }
+      })}
     </Select>
   )
 }

@@ -4,7 +4,7 @@ import { ColumnDef, createColumnHelper, VisibilityState } from "@tanstack/table-
 
 import { JobGroupStateCounts } from "../components/JobGroupStateCounts"
 import { JobStateChip } from "../components/JobStateChip"
-import { EnumFilterOption } from "../components/JobsTableFilter"
+import { EnumFilterOption, EnumFilterOptionBase } from "../components/JobsTableFilter"
 import { isJobGroupRow, JobTableRow } from "../models/jobsTableModels"
 import { JobState, jobStateColors, jobStateIcons, Match, SortDirection } from "../models/lookoutModels"
 
@@ -134,6 +134,22 @@ export const STANDARD_COLUMN_DISPLAY_NAMES: Record<StandardColumnId, string> = {
   [StandardColumnId.ExitCode]: "Exit Code",
   [StandardColumnId.RuntimeSeconds]: "Runtime",
 }
+
+// Job states grouped by active vs inactive for easier filtering in the UI
+export const ACTIVE_JOB_STATES: JobState[] = [
+  JobState.Queued,
+  JobState.Leased,
+  JobState.Pending,
+  JobState.Running,
+]
+
+export const INACTIVE_JOB_STATES: JobState[] = [
+  JobState.Succeeded,
+  JobState.Failed,
+  JobState.Cancelled,
+  JobState.Preempted,
+  JobState.Rejected,
+]
 
 const columnHelper = createColumnHelper<JobTableRow>()
 
@@ -341,12 +357,26 @@ export const GET_JOB_COLUMNS = ({
     },
     additionalMetadata: {
       filterType: FilterType.Enum,
-      enumFilterValues: Object.values(JobState).map((state) => ({
-        value: state,
-        displayName: formatJobState(state),
-        Icon: jobStateIcons[state],
-        iconColor: jobStateColors[state],
-      })),
+      enumFilterValues: [
+        {
+          groupLabel: "Active",
+          options: ACTIVE_JOB_STATES.map((state) => ({
+            value: state,
+            displayName: formatJobState(state),
+            Icon: jobStateIcons[state],
+            iconColor: jobStateColors[state],
+          })),
+        },
+        {
+          groupLabel: "Inactive",
+          options: INACTIVE_JOB_STATES.map((state) => ({
+            value: state,
+            displayName: formatJobState(state),
+            Icon: jobStateIcons[state],
+            iconColor: jobStateColors[state],
+          })),
+        },
+      ],
       defaultMatchType: Match.AnyOf,
     },
   }),
