@@ -1,6 +1,6 @@
 import { ElementType, MouseEvent, RefObject, useCallback, useEffect, useRef, useState } from "react"
 
-import { Check, MoreVert } from "@mui/icons-material"
+import { Check, Clear, MoreVert } from "@mui/icons-material"
 import {
   Box,
   Checkbox,
@@ -177,6 +177,26 @@ const EnumFilter = ({ currentFilter, enumFilterValues, label, onFilterChange }: 
           <InputLabel>{label}</InputLabel>
         )
       }
+      endAdornment={
+        currentFilter.length > 0 ? (
+          <InputAdornment position="end" style={{ marginRight: "24px" }}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation()
+                onFilterChange(undefined)
+              }}
+              aria-label="clear filter"
+              style={{
+                height: "22px",
+                width: "22px",
+              }}
+            >
+              <Clear fontSize="small" />
+            </IconButton>
+          </InputAdornment>
+        ) : null
+      }
       // Matches the styling for TextFilter component below
       sx={{
         width: "100%",
@@ -273,6 +293,22 @@ const TextFilter = ({
           },
           endAdornment: (
             <InputAdornment position="end">
+              {textFieldValue && (
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setTextFieldValue("")
+                    onChange("")
+                  }}
+                  aria-label="clear filter"
+                  style={{
+                    height: "22px",
+                    width: "22px",
+                  }}
+                >
+                  <Clear fontSize="small" />
+                </IconButton>
+              )}
               <MatchSelect possibleMatches={possibleMatches} currentMatch={match} onSelect={onColumnMatchChange} />
             </InputAdornment>
           ),

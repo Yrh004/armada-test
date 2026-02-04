@@ -1,6 +1,7 @@
 import { memo } from "react"
 
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material"
+import { IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material"
+import ClearIcon from "@mui/icons-material/Clear"
 
 import { useFormatNumberWithUserSettings } from "../../../components/hooks/formatNumberWithUserSettings"
 import { Job } from "../../../models/lookoutModels"
@@ -14,9 +15,25 @@ interface JobStatusTableProps {
   }[]
   showStatus: boolean
   jobStatus: Record<string, string>
+  onClearJobId?: () => void
+  onClearQueue?: () => void
+  onClearJobSet?: () => void
+  onClearAdditionalColumn?: (columnName: string) => void
+  onClearStatus?: () => void
 }
 export const JobStatusTable = memo(
-  ({ jobsToRender, totalJobCount, additionalColumnsToDisplay, showStatus, jobStatus }: JobStatusTableProps) => {
+  ({
+    jobsToRender,
+    totalJobCount,
+    additionalColumnsToDisplay,
+    showStatus,
+    jobStatus,
+    onClearJobId,
+    onClearQueue,
+    onClearJobSet,
+    onClearAdditionalColumn,
+    onClearStatus,
+  }: JobStatusTableProps) => {
     const formatNumber = useFormatNumberWithUserSettings()
 
     return (
@@ -24,13 +41,54 @@ export const JobStatusTable = memo(
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell>Job ID</TableCell>
-              <TableCell>Queue</TableCell>
-              <TableCell>Job Set</TableCell>
+              <TableCell>
+                Job ID
+                {onClearJobId && (
+                  <IconButton size="small" onClick={onClearJobId} aria-label="clear job id filter">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </TableCell>
+              <TableCell>
+                Queue
+                {onClearQueue && (
+                  <IconButton size="small" onClick={onClearQueue} aria-label="clear queue filter">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </TableCell>
+              <TableCell>
+                Job Set
+                {onClearJobSet && (
+                  <IconButton size="small" onClick={onClearJobSet} aria-label="clear job set filter">
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </TableCell>
               {additionalColumnsToDisplay.map(({ displayName }) => (
-                <TableCell key={displayName}>{displayName}</TableCell>
+                <TableCell key={displayName}>
+                  {displayName}
+                  {onClearAdditionalColumn && (
+                    <IconButton
+                      size="small"
+                      onClick={() => onClearAdditionalColumn(displayName)}
+                      aria-label={`clear ${displayName} filter`}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </TableCell>
               ))}
-              {showStatus && <TableCell>Status</TableCell>}
+              {showStatus && (
+                <TableCell>
+                  Status
+                  {onClearStatus && (
+                    <IconButton size="small" onClick={onClearStatus} aria-label="clear status filter">
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
 
